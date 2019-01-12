@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import time
 from decimal import Decimal
 import pygame
-import easygui
+from easygui import *
 
 
 def fillData(wykres, typ):
@@ -25,10 +25,10 @@ def obliczaniePredkosci(k,r,a,o,m):
 
 
 def obliczaniePolozeniaX(k,r,a,m,t,V):
-    return V*np.cos(katNaRadiany(a))*t
+    return V*np.cos(katNaRadiany(o))*t
 
 def obliczaniePolozeniaY(k,r,a,m,t,V):
-    return r*np.sin(katNaRadiany(90-a))+V*np.sin(katNaRadiany(a))*t-(9.80665*np.power(t,2))/2
+    return r*np.sin(katNaRadiany(90-o))+V*np.sin(katNaRadiany(o))*t-(9.80665*np.power(t,2))/2
 
 def rysujWykres(t,x,y):
     ax.plot(t[len(t) - 1], y[len(y) - 1], color='k')
@@ -40,8 +40,8 @@ T=0
 k=0.1
 r=5
 a=90
-o=50
-m=1
+o=45
+m=100
 
 fig = plt.figure()
 ax = fig.add_subplot(221)
@@ -54,74 +54,80 @@ t =[]
 
 startingDeegre=15
 startingDeegreKlin=15
-cel=[30,30.05]
+cel=[10,10.001]
 stanPoprzedniKlina=0
 stanPoprzedniegoStrzalu=0
+########
 
+msg = "Wpisz podstawowe parametry katapulty"
+title = "Projekt Podstawy Automatyki - Katapulta STARAJĄCA się trafić do celu"
+fieldNames = ["Długość ramienia", "Ustawienie klina", "Ciężar rzucanego obiektu","Współczynnik sprężystości"]
+fieldValues = []  # we start with blanks for the values
+fieldValues = multenterbox(msg,title, fieldNames)
 
-while(startingDeegreKlin>0.0001 and o<=90 and o>=0):
-    a=90
-    startingDeegre=15
-    while(startingDeegre>0.0001 and a>o and a>=0 and a<=90):
-        V = obliczaniePredkosci(k, r, a, o, m)
-        x.append([])
-        y.append([])
-        t.append([])
-        T=0
+# make sure that none of the fields was left blank
+while 1:
+  if fieldValues == None: break
+  errmsg = ""
+  for i in range(len(fieldNames)):
+    if fieldValues[i].strip() == "":
+      errmsg = errmsg + ('"%s" jest wymaganym polem.\n\n' % fieldNames[i])
+  if errmsg == "": break # no problems found
+  fieldValues = multenterbox(errmsg, title, fieldNames, fieldValues)
+r = float(fieldValues[0])
+o = int(fieldValues[1])
+m = int(fieldValues[2])
+k = float(fieldValues[3])
+#######
+while(startingDeegre>0 and a>o and a>=0 and a<=90):
+    V = obliczaniePredkosci(k, r, a, o, m)
+    x.append([])
+    y.append([])
+    t.append([])
+    T=0
 
-        while (True):
-            T+=0.5
-            Y=obliczaniePolozeniaY(k, r, o, m, T,V)
-            X=obliczaniePolozeniaX(k, r, o, m, T,V)
-            y[len(y)-1].append(Y)
-            x[len(x)-1].append(X)
-            t[len(t)-1].append(T)
-            rysujWykres(t,x,y)
-            if(Y<=0):
-                break
-
-
-        print(stanPoprzedniegoStrzalu, startingDeegre, a,o, X)
-
-
-        if (cel[0]<=x[len(x)-1][len(x[len(x)-1])-1] and x[len(x)-1][len(x[len(x)-1])-1]<=cel[1]):
-            stanPoprzedniegoStrzalu=0
+    while (True):
+        T+=0.01
+        #time.sleep(0.01)
+        Y=obliczaniePolozeniaY(k, r, o, m, T,V)
+        X=obliczaniePolozeniaX(k, r, o, m, T,V)
+        y[len(y)-1].append(Y)
+        x[len(x)-1].append(X)
+        t[len(t)-1].append(T)
+        rysujWykres(t, x, y)
+        if(Y<=0):
             break
+    print("Stan poprzedniego strzalu: ",stanPoprzedniegoStrzalu,"StartingDeegre: ", startingDeegre,"\nnaciag: ", a,"klin: ",o, " zasieg",X, " wysokosc", Y)
 
-        elif cel[0]>x[len(x)-1][len(x[len(x)-1])-1]:
-            if(stanPoprzedniegoStrzalu==1 or stanPoprzedniegoStrzalu==0):
-                if (stanPoprzedniegoStrzalu != 0):
-                    startingDeegre/=2
-                stanPoprzedniegoStrzalu=-1
-            if(a+startingDeegre>90):
-                a=90
-            if (a!=90):
-                a+=startingDeegre
-            else:
-                break
 
-        elif(cel[1]<x[len(x)-1][len(x[len(x)-1])-1]):
-            if(stanPoprzedniegoStrzalu==-1 or stanPoprzedniegoStrzalu==0):
-                if(stanPoprzedniegoStrzalu!=0):
-                    startingDeegre/=2
-                stanPoprzedniegoStrzalu=1
-            if(a-startingDeegre<0):
-                a=0
-            if(a!=0):
-                a-=startingDeegre
-            else:
-                break
-
-    if stanPoprzedniegoStrzalu==0:
+    if (cel[0]<=x[len(x)-1][len(x[len(x)-1])-1] and x[len(x)-1][len(x[len(x)-1])-1]<=cel[1]):
+        stanPoprzedniegoStrzalu=0
         break
 
-    elif a==0:
-        if(stanPoprzedniKlina==1):
-            startingDeegreKlin/=2
-        stanPoprzedniKlina=-1
+    elif cel[0]>x[len(x)-1][len(x[len(x)-1])-1]:
+        print("1")
+        if(stanPoprzedniegoStrzalu==1 or stanPoprzedniegoStrzalu==0):
+            if (stanPoprzedniegoStrzalu != 0):
+                startingDeegre/=2
+            stanPoprzedniegoStrzalu=-1
+        if(a+startingDeegre>90 and a!=90):
+            a=90
+        elif (a!=90):
+            a+=startingDeegre
+        else:
+            break
 
-    elif a==90:
-        if(stanPoprzedniKlina==-1):
+    elif(cel[1]<x[len(x)-1][len(x[len(x)-1])-1]):
+        print("2")
+        if(stanPoprzedniegoStrzalu==-1 or stanPoprzedniegoStrzalu==0):
+            if(stanPoprzedniegoStrzalu!=0):
+                startingDeegre/=2
+            stanPoprzedniegoStrzalu=1
+        while(a-startingDeegre<=o):
             startingDeegre/=2
-        stanPoprzedniKlina=1
-
+        if(a-startingDeegre<0 and a!=0):
+            a=0
+        elif(a!=0):
+            a-=startingDeegre
+        else:
+            break
