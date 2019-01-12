@@ -43,11 +43,13 @@ a=90
 o=45
 m=100
 
+"""
 fig = plt.figure()
 ax = fig.add_subplot(221)
 bx = fig.add_subplot(222)
 cx = fig.add_subplot(223)
 fig.show()
+"""
 x = []
 y = []
 t =[]
@@ -61,7 +63,7 @@ stanPoprzedniegoStrzalu=0
 
 msg = "Wpisz podstawowe parametry katapulty"
 title = "Projekt Podstawy Automatyki - Katapulta STARAJĄCA się trafić do celu"
-fieldNames = ["Długość ramienia", "Ustawienie klina", "Ciężar rzucanego obiektu","Współczynnik sprężystości"]
+fieldNames = ["Długość ramienia", "Ustawienie klina", "Ciężar rzucanego obiektu","Współczynnik sprężystości","Odleglość od celu", "Szerokość celu"]
 fieldValues = []  # we start with blanks for the values
 fieldValues = multenterbox(msg,title, fieldNames)
 
@@ -78,7 +80,14 @@ r = float(fieldValues[0])
 o = int(fieldValues[1])
 m = int(fieldValues[2])
 k = float(fieldValues[3])
+cel[0]=float(fieldValues[4])
+cel[1]=cel[0]+float(fieldValues[5])
 #######
+W=800
+H=600
+skala = 800/(1.2*cel[1])
+screen = pygame.display.set_mode((W,H))
+print(skala)
 while(startingDeegre>0 and a>o and a>=0 and a<=90):
     V = obliczaniePredkosci(k, r, a, o, m)
     x.append([])
@@ -87,14 +96,20 @@ while(startingDeegre>0 and a>o and a>=0 and a<=90):
     T=0
 
     while (True):
-        T+=0.01
-        #time.sleep(0.01)
+        T+=0.001
+        time.sleep(0.001)
         Y=obliczaniePolozeniaY(k, r, o, m, T,V)
         X=obliczaniePolozeniaX(k, r, o, m, T,V)
         y[len(y)-1].append(Y)
         x[len(x)-1].append(X)
         t[len(t)-1].append(T)
-        rysujWykres(t, x, y)
+        screen.fill((255, 255, 255))
+        ball = pygame.draw.circle(screen, (0, 0, 0), (int(X*skala), H-int(Y*skala)), 3)
+        grass = pygame.draw.line(screen, (0, 255, 0), (0, H - 1), (W , H - 1), 4)
+        target= pygame.draw.line(screen,(255,0,0),(int(cel[0]*skala),H-1),(int(cel[1]*skala),H-1),5)
+        #print((int(cel[0]*skala),H-5),(int(cel[1]*skala),H-5),cel[0],skala)
+        pygame.display.update()
+        #rysujWykres(t, x, y)
         if(Y<=0):
             break
     print("Stan poprzedniego strzalu: ",stanPoprzedniegoStrzalu,"StartingDeegre: ", startingDeegre,"\nnaciag: ", a,"klin: ",o, " zasieg",X, " wysokosc", Y)
