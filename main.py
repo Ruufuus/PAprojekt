@@ -45,7 +45,7 @@ r=5
 o=45
 m=100
 deltaT = 0.01
-myFont = pygame.font.SysFont("arial", 18)
+myFont = pygame.font.Font("diablo_h.ttf", 18)
 fig = plt.figure()
 ax = fig.add_subplot(221)
 bx = fig.add_subplot(222)
@@ -95,7 +95,6 @@ W=800
 H=600
 skala = 800/(1.2*cel[1])
 screen = pygame.display.set_mode((W,H))
-print(skala)
 i=0
 run = True
 while(run and startingDeegre>0 and a>o and a>=0 and a<=90):
@@ -124,14 +123,16 @@ while(run and startingDeegre>0 and a>o and a>=0 and a<=90):
         x[len(x)-1].append(X)
         t[len(t)-1].append(T)
         screen.fill((255, 255, 255))
-        napis = myFont.render("Obecna dokładność: "+str(deltaT)+"s.",1,(0,0,0))
+        napis3 = myFont.render(str(a), 1, (0, 0, 0))
+        napis = myFont.render("Obecne próbka czasu: "+str(deltaT)+"s.",1,(0,0,0))
         stan=""
         if(stanPoprzedniegoStrzalu==1):
             stan="Przestrzelił!"
         elif(stanPoprzedniegoStrzalu==-1):
             stan="Niedostrzelił!"
         napis2 = myFont.render(stan, 1, (0, 0, 0))
-        screen.blit(napis2, [10, 30])
+        screen.blit(napis3,[10,30])
+        screen.blit(napis2, [10, 50])
         screen.blit(napis,[10,10])
         ball = pygame.draw.circle(screen, (0, 0, 0), (int(X*skala), H-int(Y*skala)), 3)
         grass = pygame.draw.line(screen, (0, 255, 0), (0, H - 1), (W , H - 1), 4)
@@ -149,9 +150,13 @@ while(run and startingDeegre>0 and a>o and a>=0 and a<=90):
     if (cel[0]<=x[len(x)-1][len(x[len(x)-1])-1] and x[len(x)-1][len(x[len(x)-1])-1]<=cel[1]):
         stanPoprzedniegoStrzalu=0
         screen.fill((255,255,255))
-        napis2 = myFont.render("Trafiła!", 1, (0, 0, 0))
-        screen.blit(napis2, [int(W/2)-10, int(H/2)-10])
+        obraz = pygame.image.load("509945.jpg")
+        obraz = pygame.transform.scale(obraz,(800,600))
+        screen.blit(obraz, (0,0))
+        napis2 = myFont.render("Trafiła!", 1, (255, 0, 0))
+        screen.blit(napis2, [int(W/2)-2, int(H/2)-2])
         pygame.display.update()
+        time.sleep(2)
         break
 
     elif cel[0]>x[len(x)-1][len(x[len(x)-1])-1]:
@@ -165,6 +170,11 @@ while(run and startingDeegre>0 and a>o and a>=0 and a<=90):
         elif (a!=90):
             a+=startingDeegre
         else:
+            screen.fill((255, 255, 255))
+            napis2 = myFont.render("Cel jest za daleko", 1, (255, 0, 0))
+            screen.blit(napis2, [int(W / 2) - 2, int(H / 2) - 2])
+            pygame.display.update()
+            time.sleep(2)
             break
 
     elif(cel[1]<x[len(x)-1][len(x[len(x)-1])-1]):
@@ -180,4 +190,9 @@ while(run and startingDeegre>0 and a>o and a>=0 and a<=90):
         elif(a!=0):
             a-=startingDeegre
         else:
+            screen.fill((255, 255, 255))
+            napis2 = myFont.render("Cel jest za blisko!", 1, (255, 0, 0))
+            screen.blit(napis2, [int(W / 2) - 2, int(H / 2) - 2])
+            pygame.display.update()
+            time.sleep(2)
             break
