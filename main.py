@@ -116,6 +116,8 @@ while(run and startingDeegre>0 and a>o and a>=0 and a<=90):
                 run=False
             else:
                 pass
+        if(not run):
+            break
         T+=deltaT
         Y=obliczaniePolozeniaY(k, r, o, m, T,V)
         X=obliczaniePolozeniaX(k, r, o, m, T,V)
