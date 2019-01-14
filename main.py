@@ -25,16 +25,17 @@ def obliczaniePredkosci(k,r,a,o,m):
 
 
 def obliczaniePolozeniaX(k,r,a,m,t,V):
-    return V*np.cos(katNaRadiany(o))*t
+    return V*np.cos(katNaRadiany(o))*t-(r*np.sin(katNaRadiany(o)))
 
 def obliczaniePolozeniaY(k,r,a,m,t,V):
     return r*np.sin(katNaRadiany(90-o))+V*np.sin(katNaRadiany(o))*t-(9.80665*np.power(t,2))/2
 
-def rysujWykres(t,x,y,c,nrProby):
+def rysujWykres(t,x,y,c,v,nrProby):
     ax.plot(t[len(t) - 1], y[len(y) - 1], color='k')
     bx.plot(t[len(t) - 1], x[len(x) - 1], color='c')
     cx.plot(x[len(x) - 1], y[len(y) - 1], color='r')
     dx.plot(nrProby, c, color="m")
+    ex.plot(t[len(t)-1],v[len(v)-1],color='y')
     fig.canvas.draw()
 
 pygame.init()
@@ -46,42 +47,57 @@ o=45
 m=100
 deltaT = 0.01
 myFont = pygame.font.Font("diablo_h.ttf", 18)
-fig = plt.figure()
-ax = fig.add_subplot(221)
-bx = fig.add_subplot(222)
-cx = fig.add_subplot(223)
-dx = fig.add_subplot(224)
+myFont2 = pygame.font.Font("diablo_h.ttf", 100)
+fig = plt.figure(num=None,figsize=(8,6),dpi=100,facecolor='w',edgecolor='k')
+fig.subplots_adjust(left=None, bottom=None, right=None, top=None, wspace=0.5, hspace=0.5)
+ax = fig.add_subplot(321)
+ax.set_ylabel("y[m]")
+ax.set_xlabel("t[s]")
+bx = fig.add_subplot(322)
+bx.set_ylabel("x[m]")
+bx.set_xlabel("t[s]")
+cx = fig.add_subplot(323)
+cx.set_ylabel("y[m]")
+cx.set_xlabel("x[m]")
+dx = fig.add_subplot(324)
+dx.set_ylabel("odległość od celu")
+dx.set_xlabel("numer strzału")
+ex = fig.add_subplot(325)
+ex.set_ylabel("Vy[m\s]")
+ex.set_xlabel("t[s]")
 fig.show()
 os.environ['SDL_VIDEO_WINDOW_POS'] = "%d,%d" % (400,100)
 x = []
 y = []
+v = []
 t =[]
 c = []
 nrProby=[]
 startingDeegre=15
-startingDeegreKlin=15
 cel=[10,10.001]
-stanPoprzedniKlina=0
 stanPoprzedniegoStrzalu=0
 ########
 
 msg = "Wpisz podstawowe parametry katapulty"
 title = "Projekt Podstawy Automatyki - Katapulta STARAJĄCA się trafić do celu"
 fieldNames = ["Długość ramienia", "Ustawienie klina", "Ciężar rzucanego obiektu","Współczynnik sprężystości","Odleglość od celu", "Szerokość celu"]
-fieldValues = []  # we start with blanks for the values
+fieldValues = []
 fieldValues = multenterbox(msg,title, fieldNames)
 
-# make sure that none of the fields was left blank
+
 while 1:
   if fieldValues == None: break
   errmsg = ""
   for i in range(len(fieldNames)):
     if fieldValues[i].strip() == "":
       errmsg = errmsg + ('"%s" jest wymaganym polem.\n\n' % fieldNames[i])
-  if errmsg == "": break # no problems found
+    elif float(fieldValues[i])<0:
+        errmsg=errmsg+('"%s" nie może być ujemne! \n\n'% fieldNames[i])
+  if errmsg == "": break
   fieldValues = multenterbox(errmsg, title, fieldNames, fieldValues)
   if int(fieldValues[1])>=90 or int(fieldValues[1])<0:
       errmsg = errmsg + ('"%s" Wpisano złą wartość klina!.\n\n' % fieldNames[1])
+
 
 r = float(fieldValues[0])
 o = int(fieldValues[1])
@@ -98,7 +114,8 @@ screen = pygame.display.set_mode((W,H))
 i=0
 run = True
 while(run and startingDeegre>0 and a>o and a>=0 and a<=90):
-    V = obliczaniePredkosci(k, r, a, o, m)
+    Vp = obliczaniePredkosci(k, r, a, o, m)
+    v.append([])
     x.append([])
     y.append([])
     t.append([])
@@ -119,8 +136,10 @@ while(run and startingDeegre>0 and a>o and a>=0 and a<=90):
         if(not run):
             break
         T+=deltaT
-        Y=obliczaniePolozeniaY(k, r, o, m, T,V)
-        X=obliczaniePolozeniaX(k, r, o, m, T,V)
+        Y=obliczaniePolozeniaY(k, r, o, m, T,Vp)
+        X=obliczaniePolozeniaX(k, r, o, m, T,Vp)
+        V=Vp*np.sin(katNaRadiany(o))-9.80665*T
+        v[len(v)-1].append(V)
         y[len(y)-1].append(Y)
         x[len(x)-1].append(X)
         t[len(t)-1].append(T)
@@ -145,7 +164,7 @@ while(run and startingDeegre>0 and a>o and a>=0 and a<=90):
             break
 
     c.append(X - ((cel[0] + cel[1]) / 2))
-    rysujWykres(t,x,y,c,nrProby)
+    rysujWykres(t,x,y,c,v,nrProby)
     print("Stan poprzedniego strzalu: ",stanPoprzedniegoStrzalu,"StartingDeegre: ", startingDeegre,"\nnaciag: ", a,"klin: ",o, " zasieg",X, " wysokosc", Y)
 
 
@@ -155,8 +174,8 @@ while(run and startingDeegre>0 and a>o and a>=0 and a<=90):
         obraz = pygame.image.load("509945.jpg")
         obraz = pygame.transform.scale(obraz,(800,600))
         screen.blit(obraz, (0,0))
-        napis2 = myFont.render("Trafiła!", 1, (255, 0, 0))
-        screen.blit(napis2, [int(W/2)-2, int(H/2)-2])
+        napis2 = myFont2.render("Trafiła!", 1, (255, 0, 0))
+        screen.blit(napis2, [int(W/2)-200, int(H/2)-50])
         pygame.display.update()
         time.sleep(2)
         break
@@ -176,7 +195,6 @@ while(run and startingDeegre>0 and a>o and a>=0 and a<=90):
             napis2 = myFont.render("Cel jest za daleko", 1, (255, 0, 0))
             screen.blit(napis2, [int(W / 2) - 2, int(H / 2) - 2])
             pygame.display.update()
-            time.sleep(2)
             break
 
     elif(cel[1]<x[len(x)-1][len(x[len(x)-1])-1]):
@@ -196,5 +214,15 @@ while(run and startingDeegre>0 and a>o and a>=0 and a<=90):
             napis2 = myFont.render("Cel jest za blisko!", 1, (255, 0, 0))
             screen.blit(napis2, [int(W / 2) - 2, int(H / 2) - 2])
             pygame.display.update()
-            time.sleep(2)
             break
+
+running = True
+while(running):
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            pygame.quit()
+            running = False
+        else:
+            pass
+
+plt.clf()
