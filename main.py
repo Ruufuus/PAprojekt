@@ -158,9 +158,9 @@ while(run and startingDeegre>0 and a>o and a>=0 and a<=90):
         screen.blit(napis3,[10,30])
         screen.blit(napis2, [10, 50])
         screen.blit(napis,[10,10])
-        ball = pygame.draw.circle(screen, (255,13,255), (int(X*skala), H-int(Y*skala)), 3)
-        grass = pygame.draw.line(screen, (100,100,100), (0, H - 1), (W , H - 1), 10)
-        target= pygame.draw.line(screen,(255,0,0),(int(cel[0]*skala),H-1),(int(cel[1]*skala),H-1),10)
+        ball = pygame.draw.circle(screen, (255,13,255), (int(X*skala), H-int(Y*skala)), 10)
+        grass = pygame.draw.line(screen, (100,100,100), (0, H - 1), (W , H - 1), 7)
+        target= pygame.draw.line(screen,(255,0,0),(int(cel[0]*skala),H-1),(int(cel[1]*skala),H-1),7)
         pygame.display.update()
 
         if(Y<=0):
