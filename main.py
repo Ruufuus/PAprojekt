@@ -45,7 +45,7 @@ k=0.1
 r=5
 o=45
 m=100
-deltaT = 0.01
+deltaT = 0.001
 myFont = pygame.font.Font("diablo_h.ttf", 18)
 myFont2 = pygame.font.Font("diablo_h.ttf", 100)
 fig = plt.figure(num=None,figsize=(8,6),dpi=100,facecolor='w',edgecolor='k')
@@ -91,8 +91,8 @@ while 1:
   for i in range(len(fieldNames)):
     if fieldValues[i].strip() == "":
       errmsg = errmsg + ('"%s" jest wymaganym polem.\n\n' % fieldNames[i])
-    elif float(fieldValues[i])<0:
-        errmsg=errmsg+('"%s" nie może być ujemne! \n\n'% fieldNames[i])
+    elif float(fieldValues[i])<=0:
+        errmsg=errmsg+('"%s" musi być dodatnie! \n\n'% fieldNames[i])
   if errmsg == "": break
   fieldValues = multenterbox(errmsg, title, fieldNames, fieldValues)
   if int(fieldValues[1])>=90 or int(fieldValues[1])<0:
@@ -113,6 +113,9 @@ skala = 800/(1.2*cel[1])
 screen = pygame.display.set_mode((W,H))
 i=0
 run = True
+obraz2 = pygame.image.load("back.jpg")
+obraz2 = pygame.transform.scale(obraz2, (800, 600))
+screen.blit(obraz2, (0, 0))
 while(run and startingDeegre>0 and a>o and a>=0 and a<=90):
     Vp = obliczaniePredkosci(k, r, a, o, m)
     v.append([])
@@ -143,21 +146,21 @@ while(run and startingDeegre>0 and a>o and a>=0 and a<=90):
         y[len(y)-1].append(Y)
         x[len(x)-1].append(X)
         t[len(t)-1].append(T)
-        screen.fill((255, 255, 255))
         napis3 = myFont.render(str(a), 1, (0, 0, 0))
-        napis = myFont.render("Obecne próbka czasu: "+str(deltaT)+"s.",1,(0,0,0))
+        napis = myFont.render("Obecna próbka czasu: "+str(deltaT)+"s.",1,(0,0,0))
         stan=""
         if(stanPoprzedniegoStrzalu==1):
-            stan="Przestrzelił!"
+            stan="PrzesTrzelił!"
         elif(stanPoprzedniegoStrzalu==-1):
-            stan="Niedostrzelił!"
+            stan="NiedosTrzelił!"
         napis2 = myFont.render(stan, 1, (0, 0, 0))
+        screen.blit(obraz2, (0, 0))
         screen.blit(napis3,[10,30])
         screen.blit(napis2, [10, 50])
         screen.blit(napis,[10,10])
-        ball = pygame.draw.circle(screen, (0, 0, 0), (int(X*skala), H-int(Y*skala)), 3)
-        grass = pygame.draw.line(screen, (0, 255, 0), (0, H - 1), (W , H - 1), 4)
-        target= pygame.draw.line(screen,(255,0,0),(int(cel[0]*skala),H-1),(int(cel[1]*skala),H-1),5)
+        ball = pygame.draw.circle(screen, (255,13,255), (int(X*skala), H-int(Y*skala)), 3)
+        grass = pygame.draw.line(screen, (100,100,100), (0, H - 1), (W , H - 1), 10)
+        target= pygame.draw.line(screen,(255,0,0),(int(cel[0]*skala),H-1),(int(cel[1]*skala),H-1),10)
         pygame.display.update()
 
         if(Y<=0):
@@ -175,7 +178,7 @@ while(run and startingDeegre>0 and a>o and a>=0 and a<=90):
         obraz = pygame.transform.scale(obraz,(800,600))
         screen.blit(obraz, (0,0))
         napis2 = myFont2.render("Trafiła!", 1, (255, 0, 0))
-        screen.blit(napis2, [int(W/2)-200, int(H/2)-50])
+        screen.blit(napis2, [int(W/2)-266, int(H/2)-50])
         pygame.display.update()
         time.sleep(2)
         break
@@ -191,9 +194,11 @@ while(run and startingDeegre>0 and a>o and a>=0 and a<=90):
         elif (a!=90):
             a+=startingDeegre
         else:
-            screen.fill((255, 255, 255))
+            obrazx = pygame.image.load("not.jpg")
+            obrazx = pygame.transform.scale(obrazx, (800, 600))
+            screen.blit(obrazx, (0, 0))
             napis2 = myFont.render("Cel jest za daleko", 1, (255, 0, 0))
-            screen.blit(napis2, [int(W / 2) - 2, int(H / 2) - 2])
+            screen.blit(napis2, [int(W / 2), int(H / 4)])
             pygame.display.update()
             break
 
@@ -210,9 +215,11 @@ while(run and startingDeegre>0 and a>o and a>=0 and a<=90):
         elif(a!=0):
             a-=startingDeegre
         else:
-            screen.fill((255, 255, 255))
+            obrazx = pygame.image.load("not.jpg")
+            obrazx = pygame.transform.scale(obrazx, (800, 600))
+            screen.blit(obrazx, (0, 0))
             napis2 = myFont.render("Cel jest za blisko!", 1, (255, 0, 0))
-            screen.blit(napis2, [int(W / 2) - 2, int(H / 2) - 2])
+            screen.blit(napis2, [int(W / 2), int(H / 4)])
             pygame.display.update()
             break
 
