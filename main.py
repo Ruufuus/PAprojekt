@@ -4,6 +4,7 @@ import time
 import pygame
 from easygui import *
 import os
+import scipy as sp
 
 def fillData(wykres, typ):
     czas = []
@@ -16,7 +17,7 @@ def fillData(wykres, typ):
 
 pozycjaXWCzasie = [[],[]]
 pozycjaYWCzasie = []
-
+g=9.80655
 def katNaRadiany(a):
     return np.deg2rad(a)
 def obliczaniePredkosci(k,r,a,o,m):
@@ -24,28 +25,32 @@ def obliczaniePredkosci(k,r,a,o,m):
 
 
 
-def obliczaniePolozeniaX(k,r,a,m,t,V):
-    return V*np.cos(katNaRadiany(o))*t-(r*np.sin(katNaRadiany(o)))
-
-def obliczaniePolozeniaY(k,r,a,m,t,V):
-    return r*np.sin(katNaRadiany(90-o))+V*np.sin(katNaRadiany(o))*t-(9.80665*np.power(t,2))/2
-
-def rysujWykres(t,x,y,c,v,nrProby):
+def obliczaniePolozeniaX(r,m,t,V,kw):
+    return ((V*np.cos(katNaRadiany(o)))/(kw/m))*(1-np.power(np.e,(-kw/m)*t))-(r*np.sin(katNaRadiany(o)))
+def obliczaniePolozeniaY(r,m,t,V,kw):
+    return r*np.sin(katNaRadiany(90-o))+(V*np.sin(katNaRadiany(o))/(kw/m))+9.80655/np.power((kw/m),2)-((kw/m)*V*np.sin(katNaRadiany(o))+9.80655)/np.power((kw/m),2)*np.power(np.e,-(kw/m)*t)-(9.80655*t/(kw/m))
+def obliczaniePredkosciX(Vp,kw,m,t):
+    return Vp*np.cos(katNaRadiany(o))*np.power(np.e,(-kw/m)*t)
+def obliczaniePredkosciY(Vp,kw,m,t):
+    return (Vp*np.sin(katNaRadiany(o))+(9.80665/(kw/m)))*np.power(np.e,(-kw/m)*t)-9.80665/(kw/m)
+def rysujWykres(t,x,y,c,vy,nrProby,vx):
     ax.plot(t[len(t) - 1], y[len(y) - 1], color='k')
     bx.plot(t[len(t) - 1], x[len(x) - 1], color='c')
     cx.plot(x[len(x) - 1], y[len(y) - 1], color='r')
     dx.plot(nrProby, c, color="m")
-    ex.plot(t[len(t)-1],v[len(v)-1],color='y')
+    ex.plot(t[len(t)-1],vy[len(vy)-1],color='y')
+    fx.plot(t[len(t)-1],vx[len(vx)-1],color='g')
     fig.canvas.draw()
 
 pygame.init()
 
 T=0
 k=0.1
+kw=0.1
 r=5
 o=45
 m=100
-deltaT = 0.001
+deltaT = 0.01
 myFont = pygame.font.Font("diablo_h.ttf", 18)
 myFont2 = pygame.font.Font("diablo_h.ttf", 100)
 fig = plt.figure(num=None,figsize=(8,6),dpi=100,facecolor='w',edgecolor='k')
@@ -65,11 +70,15 @@ dx.set_xlabel("numer strzału")
 ex = fig.add_subplot(325)
 ex.set_ylabel("Vy[m\s]")
 ex.set_xlabel("t[s]")
+fx = fig.add_subplot(326)
+fx.set_ylabel("Vx[m/s]")
+fx.set_xlabel("t[s]")
 fig.show()
 os.environ['SDL_VIDEO_WINDOW_POS'] = "%d,%d" % (400,100)
 x = []
 y = []
-v = []
+vy = []
+vx = []
 t =[]
 c = []
 nrProby=[]
@@ -80,10 +89,9 @@ stanPoprzedniegoStrzalu=0
 
 msg = "Wpisz podstawowe parametry katapulty"
 title = "Projekt Podstawy Automatyki - Katapulta STARAJĄCA się trafić do celu"
-fieldNames = ["Długość ramienia", "Ustawienie klina", "Ciężar rzucanego obiektu","Współczynnik sprężystości","Odleglość od celu", "Szerokość celu"]
+fieldNames = ["Długość ramienia [m]", "Ustawienie klina [stopnie]", "Masa rzucanego obiektu[kg]","Współczynnik sprężystości[N/m]","Odleglość od celu[m]", "Szerokość celu[m]","Współczynnik tłumienia[1/s]"]
 fieldValues = []
 fieldValues = multenterbox(msg,title, fieldNames)
-
 
 while 1:
   if fieldValues == None: break
@@ -103,9 +111,14 @@ r = float(fieldValues[0])
 o = int(fieldValues[1])
 m = int(fieldValues[2])
 k = float(fieldValues[3])
-a=(90-o)/2+o
 cel[0]=float(fieldValues[4])
-cel[1]=cel[0]+float(fieldValues[5])
+cel[1]=float(fieldValues[5])+cel[0]
+B = float(fieldValues[6])
+kw = B*m
+
+mk=(r*np.power((r/5),2)*605)
+
+a=(90-o)/2+o
 #######
 W=800
 H=600
@@ -117,8 +130,9 @@ obraz2 = pygame.image.load("back.jpg")
 obraz2 = pygame.transform.scale(obraz2, (800, 600))
 screen.blit(obraz2, (0, 0))
 while(run and startingDeegre>0 and a>o and a>=0 and a<=90):
-    Vp = obliczaniePredkosci(k, r, a, o, m)
-    v.append([])
+    Vp = obliczaniePredkosci(k, r, a, o, mk)
+    vy.append([])
+    vx.append([])
     x.append([])
     y.append([])
     t.append([])
@@ -139,10 +153,13 @@ while(run and startingDeegre>0 and a>o and a>=0 and a<=90):
         if(not run):
             break
         T+=deltaT
-        Y=obliczaniePolozeniaY(k, r, o, m, T,Vp)
-        X=obliczaniePolozeniaX(k, r, o, m, T,Vp)
-        V=Vp*np.sin(katNaRadiany(o))-9.80665*T
-        v[len(v)-1].append(V)
+        Y=obliczaniePolozeniaY( r,  m, T,Vp,kw)
+        X=obliczaniePolozeniaX( r,  m, T,Vp,kw)
+        Vy=obliczaniePredkosciY(Vp,kw,m,T)
+        Vx=obliczaniePredkosciX(Vp,kw,m,T)
+        print(Vx,"\n",Vy,"\n",X,"\n",Y)
+        vy[len(vy)-1].append(Vy)
+        vx[len(vx)-1].append(Vx)
         y[len(y)-1].append(Y)
         x[len(x)-1].append(X)
         t[len(t)-1].append(T)
@@ -167,7 +184,7 @@ while(run and startingDeegre>0 and a>o and a>=0 and a<=90):
             break
 
     c.append(X - ((cel[0] + cel[1]) / 2))
-    rysujWykres(t,x,y,c,v,nrProby)
+    rysujWykres(t,x,y,c,vy,nrProby,vx)
     print("Stan poprzedniego strzalu: ",stanPoprzedniegoStrzalu,"StartingDeegre: ", startingDeegre,"\nnaciag: ", a,"klin: ",o, " zasieg",X, " wysokosc", Y)
 
 
@@ -197,7 +214,8 @@ while(run and startingDeegre>0 and a>o and a>=0 and a<=90):
             obrazx = pygame.image.load("not.jpg")
             obrazx = pygame.transform.scale(obrazx, (800, 600))
             screen.blit(obrazx, (0, 0))
-            napis2 = myFont.render("Cel jest za daleko", 1, (255, 0, 0))
+            napis2 = myFont.render("Cel jesT"
+                                   " za daleko", 1, (255, 0, 0))
             screen.blit(napis2, [int(W / 2), int(H / 4)])
             pygame.display.update()
             break
@@ -218,7 +236,7 @@ while(run and startingDeegre>0 and a>o and a>=0 and a<=90):
             obrazx = pygame.image.load("not.jpg")
             obrazx = pygame.transform.scale(obrazx, (800, 600))
             screen.blit(obrazx, (0, 0))
-            napis2 = myFont.render("Cel jest za blisko!", 1, (255, 0, 0))
+            napis2 = myFont.render("Cel jesT za blisko!", 1, (255, 0, 0))
             screen.blit(napis2, [int(W / 2), int(H / 4)])
             pygame.display.update()
             break
